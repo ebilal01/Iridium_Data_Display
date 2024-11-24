@@ -1,0 +1,6 @@
+Flask
+Flask-CORS
+gunicorn
+Flask==3.1.0
+Flask-CORS==5.0.0
+gunicorn==23.0.0
