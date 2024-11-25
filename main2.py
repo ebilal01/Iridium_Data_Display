@@ -53,6 +53,9 @@ def generate_realistic_data():
     current_position["altitude"] = max(0, min(current_position["altitude"], 35000))
     current_position["temperature"] += random.uniform(-0.5, 0.5)
 
+    # Log the updated values
+    print(f"Updated data: {current_position}")
+
     # Append to history
     data_history.append({
         "time": datetime.datetime.utcnow().isoformat(),
@@ -81,6 +84,7 @@ def history():
 # Background thread for generating live data
 def continuous_data_simulation():
     while True:
+        print("Generating new data...")
         generate_realistic_data()
         time.sleep(5)  # Update every 5 seconds
 
@@ -92,6 +96,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
