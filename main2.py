@@ -17,7 +17,7 @@ CORS(app)
 data_history = deque(maxlen=1000)
 
 # S3 Bucket configuration
-BUCKET_NAME = 'your-bucket-name'  # Replace with your S3 bucket name
+BUCKET_NAME = 'DataMessage'  # Replace with your S3 bucket name
 S3_KEY = 'telemetry_data.json'  # File key in the S3 bucket
 
 # Initialize the S3 client
