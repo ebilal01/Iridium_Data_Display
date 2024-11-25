@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satellite Data Display</title>
+    <link rel="stylesheet" type="text/css" href="static/format.css">
+    <!-- Leaflet.js and its CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+</head>
+<body>
+<header>
+    <div class="header-content">
+        <h3>Satellite Network Data Display</h3>
+        <h6>Professor Robert White Ph.D.</h6>
+    </div>
+    <nav>
+        <ul class="nav_links">
+            <li><a href="https://sites.tufts.edu/senselab/research/#anemometer">MSS Lab Site</a></li>
+
+        </ul>
+    </nav>
+</header>
+
+<!-- Map Container -->
+<div id="map" style="height: 500px; margin-bottom: 20px;"></div>
+
+<!-- Graph Container -->
+<div id="graph" style="width: 100%; height: 500px;"></div>
+
+<script>
+  const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend address
+
+  const map = L.map('map').setView([0, 0], 2); // Center map
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const marker = L.marker([0, 0]).addTo(map); // Initialize marker
+  const flightPath = [];
+  const pathLine = L.polyline(flightPath, { color: 'blue' }).addTo(map);
+
+  async function updateGraph() {
+    try {
+      const response = await fetch(`${BASE_URL}/history`);
+      if (!response.ok) throw new Error("No historical data available.");
+      const history = await response.json();
+
+      if (history.length === 0) return;
+
+      const times = history.map(d => d.time);
+      const altitudes = history.map(d => d.altitude);
+
+      Plotly.newPlot('graph', [
+        { x: times, y: altitudes, mode: 'lines', name: 'Altitude' }
+      ], {
+        title: 'Satellite Altitude Over Time',
+        xaxis: { title: 'Time' },
+        yaxis: { title: 'Altitude (m)' }
+      });
+    } catch (error) {
+      console.error("Error updating graph:", error);
+    }
+  }
+
+  async function updateMapAndPath() {
+    try {
+      const response = await fetch(`${BASE_URL}/live-data`);
+      if (!response.ok) throw new Error("No live data available.");
+      const { latitude, longitude, altitude, temperature } = await response.json();
+
+      if (latitude && longitude) {
+        marker.setLatLng([latitude, longitude]);
+        marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
+
+        flightPath.push([latitude, longitude]);
+        pathLine.setLatLngs(flightPath);
+        map.fitBounds(pathLine.getBounds());
+      }
+    } catch (error) {
+      console.error("Error updating map and path:", error);
+    }
+  }
+
+  async function loadInitialPath() {
+    try {
+      const response = await fetch(`${BASE_URL}/history`);
+      if (!response.ok) throw new Error("No initial historical data available.");
+      const history = await response.json();
+
+      const initialPath = history.map(point => [point.latitude, point.longitude]);
+      flightPath.push(...initialPath);
+      pathLine.setLatLngs(flightPath);
+      map.fitBounds(pathLine.getBounds());
+    } catch (error) {
+      console.error("Error loading initial path:", error);
+    }
+  }
+
+  loadInitialPath();
+  updateGraph();
+  setInterval(updateGraph, 10000);
+  setInterval(updateMapAndPath, 10000);
+</script>
+</body>
+</html>
+
