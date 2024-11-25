@@ -96,7 +96,7 @@ def generate_realistic_data():
 @app.route('/')
 def index():
     try:
-        return render_template('index.html')  # Serve the local HTML file
+        return render_template('https://github.com/ebilal01/Iridium_Data_Display/blob/68d15ac117ff159d0afecf2f6019b599712b6517/static/index2.html')  # Serve the local HTML file
     except Exception as e:
         return str(e), 500  # Return error message for debugging purposes
 
