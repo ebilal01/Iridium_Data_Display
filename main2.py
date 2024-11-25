@@ -23,8 +23,7 @@ if not aws_access_key or not aws_secret_key or not aws_region:
     exit(1)
 
 app = Flask(__name__)
-CORS(app, origins=["https://iridium-data-display.onrender.com"])
-
+CORS(app, origins=["https://iridium-data-display.onrender.com"])  # Allow CORS for your frontend URL
 
 # Initialize a deque to hold historical data
 data_history = deque(maxlen=1000)
@@ -121,7 +120,9 @@ load_telemetry_data()
 threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render sets the port automatically
+    app.run(host="0.0.0.0", port=port, debug=True)
+
 
 
 
