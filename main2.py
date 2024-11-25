@@ -92,10 +92,14 @@ def generate_realistic_data():
         print(f"Updated S3 with latest data: {new_data}")
     except Exception as e:
         print(f"Error saving data to S3: {e}")
-        
+
 @app.route('/')
 def index():
-    return render_template('index2.html')  # Make sure this points to your HTML file
+    try:
+        return render_template('index.html')  # Serve the local HTML file
+    except Exception as e:
+        return str(e), 500  # Return error message for debugging purposes
+
 
 @app.route('/live-data', methods=['GET'])
 def live_data():
