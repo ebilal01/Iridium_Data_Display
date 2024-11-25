@@ -32,16 +32,16 @@
 <canvas id="altitudeChart" width="400" height="200"></canvas>
 
 <script>
-    const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend address
+    const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend
 
     // Map Setup (Leaflet)
-    const map = L.map('map').setView([0, 0], 2); // Center map
+    const map = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    const marker = L.marker([0, 0]).addTo(map); // Initialize marker
+    const marker = L.marker([0, 0]).addTo(map);
     const flightPath = [];
     const pathLine = L.polyline(flightPath, { color: 'blue' }).addTo(map);
 
@@ -50,36 +50,30 @@
     const altitudeChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [], // time labels
+            labels: [], // Time labels
             datasets: [{
                 label: 'Altitude (m)',
-                data: [], // altitude data
+                data: [], // Altitude data
                 borderColor: 'rgb(75, 192, 192)',
                 fill: false
             }]
         },
         options: {
             scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom'
-                },
-                y: {
-                    beginAtZero: true
-                }
+                x: { type: 'time', time: { unit: 'second' }, title: { display: true, text: 'Time' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Altitude (m)' } }
             }
         }
     });
 
     // Fetch live data and update map and chart
-       // Fetch live data and update map and chart
     async function updateLiveData() {
         try {
             const response = await fetch(`${BASE_URL}/live-data`);
             if (!response.ok) throw new Error("No live data available.");
             const { latitude, longitude, altitude, temperature, time } = await response.json();
 
-            console.log("Received data:", { latitude, longitude, altitude, time }); // Debugging log
+            console.log("Received data:", { latitude, longitude, altitude, time });
 
             if (latitude && longitude) {
                 // Update map marker and path
@@ -89,18 +83,17 @@
                 // Update flight path on the map
                 flightPath.push([latitude, longitude]);
                 pathLine.setLatLngs(flightPath);
-                map.fitBounds(pathLine.getBounds()); // Dynamically zoom to fit path
+                map.fitBounds(pathLine.getBounds());
 
                 // Update chart
                 altitudeChart.data.labels.push(time);
                 altitudeChart.data.datasets[0].data.push(altitude);
-                altitudeChart.update(); // Refresh the chart
+                altitudeChart.update();
 
-                // Optional: Limit chart size to the last 20 points for clarity
+                // Limit chart size for readability
                 if (altitudeChart.data.labels.length > 20) {
                     altitudeChart.data.labels.shift();
                     altitudeChart.data.datasets[0].data.shift();
-                    altitudeChart.update();
                 }
             }
         } catch (error) {
@@ -108,10 +101,10 @@
         }
     }
 
-    // Periodically fetch live data and update every 5 seconds
+    // Poll live data every 5 seconds
     setInterval(updateLiveData, 5000);
-
 </script>
+
 </body>
 </html>
 
