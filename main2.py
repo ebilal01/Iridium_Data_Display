@@ -8,18 +8,19 @@ import threading
 import time
 from collections import deque
 import datetime
-from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from dotenv import load_dotenv
-import os
 
-# Load environment variables from data.env instead of the default .env
-load_dotenv('data.env')
-
+# Load environment variables from data.env
+load_dotenv('.env')
 
 aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 aws_region = os.getenv('AWS_DEFAULT_REGION')
 
+if not aws_access_key or not aws_secret_key or not aws_region:
+    print("Error: Missing AWS credentials or region. Check your .env file.")
+    exit(1)
 
 app = Flask(__name__)
 CORS(app)
@@ -28,11 +29,16 @@ CORS(app)
 data_history = deque(maxlen=1000)
 
 # S3 Bucket configuration
-BUCKET_NAME = 'DataMessage'  # Replace with your S3 bucket name
+BUCKET_NAME = 'datamessage'  # Replace with your actual S3 bucket name
 S3_KEY = 'telemetry_data.json'  # File key in the S3 bucket
 
 # Initialize the S3 client
-s3 = boto3.client('s3')
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=aws_access_key,
+    aws_secret_access_key=aws_secret_key,
+    region_name=aws_region
+)
 
 # Current position (for simulated live data)
 current_position = {
@@ -55,6 +61,12 @@ def load_telemetry_data():
             print("telemetry_data.json is not formatted as a list of records.")
     except NoCredentialsError:
         print("Error: AWS credentials not available.")
+    except PartialCredentialsError:
+        print("Error: Incomplete AWS credentials.")
+    except s3.exceptions.NoSuchBucket:
+        print(f"Error: Bucket '{BUCKET_NAME}' does not exist. Please check the bucket name.")
+    except s3.exceptions.NoSuchKey:
+        print(f"Warning: No object found at {S3_KEY}. Starting with an empty history.")
     except Exception as e:
         print(f"Error retrieving data from S3: {e}")
         print("No data found in S3. Starting with an empty history.")
@@ -70,14 +82,14 @@ def generate_realistic_data():
     current_position["altitude"] = max(0, min(current_position["altitude"], 35000))
     current_position["temperature"] += random.uniform(-0.5, 0.5)
 
-    # Append to history
-    data_history.append({
+    new_data = {
         "time": datetime.datetime.utcnow().isoformat(),
         "latitude": current_position["latitude"],
         "longitude": current_position["longitude"],
         "altitude": current_position["altitude"],
         "temperature": current_position["temperature"]
-    })
+    }
+    data_history.append(new_data)
 
     # Save updated data to S3
     try:
@@ -116,6 +128,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
