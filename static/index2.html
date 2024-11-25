@@ -72,6 +72,7 @@
     });
 
     // Fetch live data and update map and chart
+       // Fetch live data and update map and chart
     async function updateLiveData() {
         try {
             const response = await fetch(`${BASE_URL}/live-data`);
@@ -88,12 +89,19 @@
                 // Update flight path on the map
                 flightPath.push([latitude, longitude]);
                 pathLine.setLatLngs(flightPath);
-                map.fitBounds(pathLine.getBounds());
+                map.fitBounds(pathLine.getBounds()); // Dynamically zoom to fit path
 
                 // Update chart
                 altitudeChart.data.labels.push(time);
                 altitudeChart.data.datasets[0].data.push(altitude);
-                altitudeChart.update();
+                altitudeChart.update(); // Refresh the chart
+
+                // Optional: Limit chart size to the last 20 points for clarity
+                if (altitudeChart.data.labels.length > 20) {
+                    altitudeChart.data.labels.shift();
+                    altitudeChart.data.datasets[0].data.shift();
+                    altitudeChart.update();
+                }
             }
         } catch (error) {
             console.error("Error updating live data:", error);
@@ -102,6 +110,7 @@
 
     // Periodically fetch live data and update every 5 seconds
     setInterval(updateLiveData, 5000);
+
 </script>
 </body>
 </html>
