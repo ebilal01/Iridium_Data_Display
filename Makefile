@@ -1,0 +1,3 @@
+AWS_ACCESS_KEY_ID=tuftsjumbos
+AWS_SECRET_ACCESS_KEY=tuftsjumbos
+AWS_DEFAULT_REGION=us-east-1
