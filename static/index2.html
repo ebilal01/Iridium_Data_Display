@@ -78,6 +78,8 @@
             if (!response.ok) throw new Error("No live data available.");
             const { latitude, longitude, altitude, temperature, time } = await response.json();
 
+            console.log("Received data:", { latitude, longitude, altitude, time }); // Debugging log
+
             if (latitude && longitude) {
                 // Update map marker and path
                 marker.setLatLng([latitude, longitude]);
@@ -103,6 +105,7 @@
 </script>
 </body>
 </html>
+
 
 
 
