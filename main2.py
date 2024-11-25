@@ -11,7 +11,7 @@ import datetime
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from dotenv import load_dotenv
 
-# Load environment variables from data.env
+# Load environment variables from .env
 load_dotenv('.env')
 
 aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
@@ -25,14 +25,15 @@ if not aws_access_key or not aws_secret_key or not aws_region:
 app = Flask(__name__)
 CORS(app)
 
-# Initialize an empty deque to hold historical data
+# Initialize a deque to hold historical data
 data_history = deque(maxlen=1000)
+data_lock = threading.Lock()  # Thread-safe lock for data access
 
 # S3 Bucket configuration
-BUCKET_NAME = 'datamessage'  # Replace with your actual S3 bucket name
-S3_KEY = 'telemetry_data.json'  # File key in the S3 bucket
+BUCKET_NAME = 'datamessage'  # Replace with your S3 bucket name
+S3_KEY = 'telemetry_data.json'
 
-# Initialize the S3 client
+# Initialize S3 client
 s3 = boto3.client(
     's3',
     aws_access_key_id=aws_access_key,
@@ -40,7 +41,7 @@ s3 = boto3.client(
     region_name=aws_region
 )
 
-# Current position (for simulated live data)
+# Current position for simulated live data
 current_position = {
     "latitude": 0,
     "longitude": 0,
@@ -55,23 +56,15 @@ def load_telemetry_data():
         response = s3.get_object(Bucket=BUCKET_NAME, Key=S3_KEY)
         data = json.loads(response['Body'].read().decode('utf-8'))
         if isinstance(data, list):
-            data_history.extend(data)
+            with data_lock:
+                data_history.extend(data)
             print(f"Loaded {len(data)} records from telemetry_data.json")
         else:
             print("telemetry_data.json is not formatted as a list of records.")
-    except NoCredentialsError:
-        print("Error: AWS credentials not available.")
-    except PartialCredentialsError:
-        print("Error: Incomplete AWS credentials.")
-    except s3.exceptions.NoSuchBucket:
-        print(f"Error: Bucket '{BUCKET_NAME}' does not exist. Please check the bucket name.")
-    except s3.exceptions.NoSuchKey:
-        print(f"Warning: No object found at {S3_KEY}. Starting with an empty history.")
     except Exception as e:
-        print(f"Error retrieving data from S3: {e}")
-        print("No data found in S3. Starting with an empty history.")
+        print(f"Error retrieving data from S3: {e}. Starting with an empty history.")
 
-# Generate realistic data for live updates
+# Generate realistic data
 def generate_realistic_data():
     global current_position
 
@@ -89,30 +82,30 @@ def generate_realistic_data():
         "altitude": current_position["altitude"],
         "temperature": current_position["temperature"]
     }
-    data_history.append(new_data)
+
+    with data_lock:
+        data_history.append(new_data)
 
     # Save updated data to S3
     try:
         s3.put_object(Bucket=BUCKET_NAME, Key=S3_KEY, Body=json.dumps(list(data_history)))
-        print("Successfully updated data to S3")
+        print(f"Updated S3 with latest data: {new_data}")
     except Exception as e:
         print(f"Error saving data to S3: {e}")
 
-@app.route('/')
-def index():
-    return app.send_static_file('index2.html')
-
 @app.route('/live-data', methods=['GET'])
 def live_data():
-    if not data_history:
-        return jsonify({"message": "No data available"}), 404
-    latest_data = data_history[-1]
-    print("Live data:", latest_data)  # Debugging output to verify data
+    with data_lock:
+        if not data_history:
+            return jsonify({"message": "No data available"}), 404
+        latest_data = data_history[-1]
+    print("Serving live data:", latest_data)
     return jsonify(latest_data)
 
 @app.route('/history', methods=['GET'])
 def history():
-    return jsonify(list(data_history))  # All historical data
+    with data_lock:
+        return jsonify(list(data_history))  # All historical data
 
 # Background thread for generating live data
 def continuous_data_simulation():
@@ -128,6 +121,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
