@@ -14,8 +14,8 @@ CORS(app)
 # Initialize an empty deque to hold historical data
 data_history = deque(maxlen=1000)
 
-# Path to telemetry data
-TELEMETRY_FILE = os.path.join(app.static_folder, 'telemetry_data.json')
+# Path to telemetry data (move out of the static folder)
+TELEMETRY_FILE = 'data/telemetry_data.json'  # Adjust the path accordingly
 
 # Current position (for simulated live data)
 current_position = {
@@ -90,6 +90,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
