@@ -23,7 +23,8 @@ if not aws_access_key or not aws_secret_key or not aws_region:
     exit(1)
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://iridium-data-display.onrender.com"])
+
 
 # Initialize a deque to hold historical data
 data_history = deque(maxlen=1000)
