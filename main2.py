@@ -1,6 +1,7 @@
 import os
 import json
-from flask import Flask, jsonify, request
+import random
+from flask import Flask, jsonify
 from flask_cors import CORS
 import threading
 import time
@@ -69,17 +70,17 @@ def index():
 def live_data():
     if not data_history:
         return jsonify({"message": "No data available"}), 404
-    return jsonify(data_history[-1])
+    return jsonify(data_history[-1])  # Latest data point
 
 @app.route('/history', methods=['GET'])
 def history():
-    return jsonify(list(data_history))
+    return jsonify(list(data_history))  # All historical data
 
 # Background thread for generating live data
 def continuous_data_simulation():
     while True:
         generate_realistic_data()
-        time.sleep(5)
+        time.sleep(5)  # Update every 5 seconds
 
 # Load telemetry data on startup
 load_telemetry_data()
@@ -89,5 +90,6 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
