@@ -9,8 +9,8 @@
     <!-- Leaflet.js and its CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-    <!-- Plotly.js -->
-    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <header>
@@ -29,7 +29,7 @@
 <div id="map" style="height: 500px; margin-bottom: 20px;"></div>
 
 <!-- Graph Container -->
-<div id="graph" style="width: 100%; height: 500px;"></div>
+<canvas id="altitudeChart" style="width: 100%; height: 500px;"></canvas>
 
 <script>
   const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend address
@@ -44,6 +44,40 @@
   const flightPath = [];
   const pathLine = L.polyline(flightPath, { color: 'blue' }).addTo(map);
 
+  let altitudeData = [];
+  let timeData = [];
+
+  const ctx = document.getElementById('altitudeChart').getContext('2d');
+  const altitudeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: timeData,
+      datasets: [{
+        label: 'Altitude (m)',
+        data: altitudeData,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Time'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Altitude (m)'
+          }
+        }
+      }
+    }
+  });
+
   async function updateGraph() {
     try {
       const response = await fetch(`${BASE_URL}/history`);
@@ -52,16 +86,13 @@
 
       if (history.length === 0) return;
 
-      const times = history.map(d => d.time);
-      const altitudes = history.map(d => d.altitude);
+      // Update time and altitude data
+      timeData = history.map(d => d.time);
+      altitudeData = history.map(d => d.altitude);
 
-      Plotly.newPlot('graph', [
-        { x: times, y: altitudes, mode: 'lines', name: 'Altitude' }
-      ], {
-        title: 'Satellite Altitude Over Time',
-        xaxis: { title: 'Time' },
-        yaxis: { title: 'Altitude (m)' }
-      });
+      altitudeChart.data.labels = timeData;
+      altitudeChart.data.datasets[0].data = altitudeData;
+      altitudeChart.update();
     } catch (error) {
       console.error("Error updating graph:", error);
     }
@@ -108,4 +139,5 @@
 </script>
 </body>
 </html>
+
 
