@@ -9,8 +9,8 @@
     <!-- Leaflet.js and its CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-    <!-- Plotly.js -->
-    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <header>
@@ -29,7 +29,7 @@
 <div id="map" style="height: 500px; margin-bottom: 20px;"></div>
 
 <!-- Graph Container -->
-<div id="graph" style="width: 100%; height: 500px;"></div>
+<canvas id="graph" style="width: 100%; height: 500px;"></canvas>
 
 <script>
   const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend address
@@ -48,6 +48,29 @@
   const times = [];
   const altitudes = [];
 
+  // Create the chart instance for the altitude graph
+  const ctx = document.getElementById('graph').getContext('2d');
+  const altitudeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: times,
+      datasets: [{
+        label: 'Altitude (m)',
+        data: altitudes,
+        borderColor: 'rgb(75, 192, 192)',
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: 'Time' } },
+        y: { title: { display: true, text: 'Altitude (m)' } }
+      },
+      animation: false
+    }
+  });
+
   // Function to update the graph
   function updateGraph() {
     fetch(`${BASE_URL}/history`)
@@ -62,21 +85,10 @@
         times.push(time);
         altitudes.push(altitude);
 
-        // Update the graph with new data
-        const data = [{
-          x: times,
-          y: altitudes,
-          mode: 'lines',
-          name: 'Altitude'
-        }];
-
-        const layout = {
-          title: 'Satellite Altitude Over Time',
-          xaxis: { title: 'Time' },
-          yaxis: { title: 'Altitude (m)' }
-        };
-
-        Plotly.newPlot('graph', data, layout);
+        // Update the chart with new data
+        altitudeChart.data.labels = times;
+        altitudeChart.data.datasets[0].data = altitudes;
+        altitudeChart.update();
       })
       .catch(error => console.error('Error updating graph:', error));
   }
@@ -127,7 +139,6 @@
 </body>
 </html>
 
-</html>
 
 
 
