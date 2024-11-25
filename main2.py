@@ -2,12 +2,12 @@ import os
 import json
 import random
 import boto3
-import threading
-import time
-import datetime
 from flask import Flask, jsonify
 from flask_cors import CORS
+import threading
+import time
 from collections import deque
+import datetime
 from botocore.exceptions import NoCredentialsError
 
 app = Flask(__name__)
@@ -16,10 +16,12 @@ CORS(app)
 # Initialize an empty deque to hold historical data
 data_history = deque(maxlen=1000)
 
-# AWS S3 Configuration
+# S3 Bucket configuration
+BUCKET_NAME = 'your-bucket-name'  # Replace with your S3 bucket name
+S3_KEY = 'telemetry_data.json'  # File key in the S3 bucket
+
+# Initialize the S3 client
 s3 = boto3.client('s3')
-BUCKET_NAME = 'your-s3-bucket-name'  # Replace with your S3 bucket name
-TELEMETRY_FILE = 'telemetry_data.json'  # File name in the S3 bucket
 
 # Current position (for simulated live data)
 current_position = {
@@ -29,33 +31,21 @@ current_position = {
     "temperature": 0
 }
 
-# Upload telemetry data to S3
-def upload_to_s3(data):
-    try:
-        s3.put_object(Bucket=BUCKET_NAME, Key=TELEMETRY_FILE, Body=json.dumps(data))
-    except NoCredentialsError:
-        print("Error: AWS credentials not available.")
-    except Exception as e:
-        print(f"Error uploading to S3: {e}")
-
-# Download telemetry data from S3
-def download_from_s3():
-    try:
-        response = s3.get_object(Bucket=BUCKET_NAME, Key=TELEMETRY_FILE)
-        data = json.loads(response['Body'].read().decode('utf-8'))
-        return data
-    except Exception as e:
-        print(f"Error retrieving data from S3: {e}")
-        return []
-
 # Load telemetry data from S3
 def load_telemetry_data():
     global data_history
-    data = download_from_s3()
-    if data:
-        data_history.extend(data)
-        print(f"Loaded {len(data)} records from S3")
-    else:
+    try:
+        response = s3.get_object(Bucket=BUCKET_NAME, Key=S3_KEY)
+        data = json.loads(response['Body'].read().decode('utf-8'))
+        if isinstance(data, list):
+            data_history.extend(data)
+            print(f"Loaded {len(data)} records from telemetry_data.json")
+        else:
+            print("telemetry_data.json is not formatted as a list of records.")
+    except NoCredentialsError:
+        print("Error: AWS credentials not available.")
+    except Exception as e:
+        print(f"Error retrieving data from S3: {e}")
         print("No data found in S3. Starting with an empty history.")
 
 # Generate realistic data for live updates
@@ -78,8 +68,12 @@ def generate_realistic_data():
         "temperature": current_position["temperature"]
     })
 
-    # Upload updated history to S3
-    upload_to_s3(list(data_history))
+    # Save updated data to S3
+    try:
+        s3.put_object(Bucket=BUCKET_NAME, Key=S3_KEY, Body=json.dumps(list(data_history)))
+        print("Successfully updated data to S3")
+    except Exception as e:
+        print(f"Error saving data to S3: {e}")
 
 @app.route('/')
 def index():
@@ -111,6 +105,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
