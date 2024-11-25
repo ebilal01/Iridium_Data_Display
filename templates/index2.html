@@ -9,8 +9,10 @@
     <!-- Leaflet.js and its CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Chart.js and Time Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
 <header>
@@ -60,8 +62,18 @@
         },
         options: {
             scales: {
-                x: { type: 'time', time: { unit: 'second' }, title: { display: true, text: 'Time' } },
-                y: { beginAtZero: true, title: { display: true, text: 'Altitude (m)' } }
+                x: {
+                    type: 'time', 
+                    time: {
+                        unit: 'second', 
+                        tooltipFormat: 'll HH:mm:ss'  // Tooltip format for time
+                    },
+                    title: { display: true, text: 'Time' }
+                },
+                y: { 
+                    beginAtZero: true, 
+                    title: { display: true, text: 'Altitude (m)' }
+                }
             }
         }
     });
@@ -85,12 +97,17 @@
                 pathLine.setLatLngs(flightPath);
                 map.fitBounds(pathLine.getBounds());
 
-                // Update chart
-                altitudeChart.data.labels.push(time);
-                altitudeChart.data.datasets[0].data.push(altitude);
+                // Update chart with time and altitude data
+                const parsedTime = new Date(time);  // Ensure time is a Date object
+                altitudeChart.data.labels.push(parsedTime);  // Time label as Date object
+                altitudeChart.data.datasets[0].data.push(altitude);  // Altitude data
+
+                // Log the data for debugging
+                console.log("Chart data:", altitudeChart.data);
+
                 altitudeChart.update();
 
-                // Limit chart size for readability
+                // Limit chart size for readability (show only the last 20 data points)
                 if (altitudeChart.data.labels.length > 20) {
                     altitudeChart.data.labels.shift();
                     altitudeChart.data.datasets[0].data.shift();
@@ -107,3 +124,4 @@
 
 </body>
 </html>
+
