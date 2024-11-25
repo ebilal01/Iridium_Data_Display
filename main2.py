@@ -14,8 +14,8 @@ CORS(app)
 # Initialize an empty deque to hold historical data
 data_history = deque(maxlen=1000)
 
-# Path to telemetry data (move out of the static folder)
-TELEMETRY_FILE = 'data/telemetry_data.json'  # Adjust the path accordingly
+# Path to telemetry data (ensure this file is outside static)
+TELEMETRY_FILE = 'telemetry_data.json'
 
 # Current position (for simulated live data)
 current_position = {
@@ -70,7 +70,9 @@ def index():
 def live_data():
     if not data_history:
         return jsonify({"message": "No data available"}), 404
-    return jsonify(data_history[-1])  # Latest data point
+    latest_data = data_history[-1]
+    print("Live data:", latest_data)  # Debugging output to verify data
+    return jsonify(latest_data)
 
 @app.route('/history', methods=['GET'])
 def history():
@@ -90,6 +92,7 @@ threading.Thread(target=continuous_data_simulation, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
