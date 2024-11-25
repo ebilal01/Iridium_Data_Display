@@ -9,6 +9,17 @@ import time
 from collections import deque
 import datetime
 from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from data.env instead of the default .env
+load_dotenv('data.env')
+
+
+aws_access_key = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+aws_region = os.getenv('AWS_DEFAULT_REGION')
+
 
 app = Flask(__name__)
 CORS(app)
