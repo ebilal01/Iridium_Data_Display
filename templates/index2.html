@@ -80,7 +80,7 @@ function updateGraph() {
         .then(response => response.json())
         .then(history => {
             if (history.length > 0) {
-                // Update the times and altitudes arrays
+                // Get the latest data from history
                 const latestData = history[history.length - 1];
                 const time = latestData.time;
                 const altitude = latestData.altitude;
@@ -103,6 +103,7 @@ function updateMapAndPath() {
     fetch(`${BASE_URL}/live-data`)
         .then(response => response.json())
         .then(data => {
+            console.log('Received live data:', data); // Add this log to check the data
             if (data.latitude && data.longitude) {
                 const { latitude, longitude, altitude, temperature, time } = data;
 
@@ -122,6 +123,7 @@ function updateMapAndPath() {
         })
         .catch(error => console.error('Error updating map and path:', error));
 }
+
 
 // Load initial historical data for path
 function loadInitialPath() {
