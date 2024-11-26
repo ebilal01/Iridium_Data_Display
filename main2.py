@@ -65,7 +65,6 @@ def load_telemetry_data():
     except Exception as e:
         print(f"Error retrieving data from S3: {e}. Starting with an empty history.")
 
-# Generate realistic data
 def generate_realistic_data():
     global current_position
 
@@ -87,12 +86,16 @@ def generate_realistic_data():
     with data_lock:
         data_history.append(new_data)
 
+    # Log when new data is generated
+    print(f"Generated new data: {new_data}")
+
     # Save updated data to S3
     try:
         s3.put_object(Bucket=BUCKET_NAME, Key=S3_KEY, Body=json.dumps(list(data_history)))
         print(f"Updated S3 with latest data: {new_data}")
     except Exception as e:
         print(f"Error saving data to S3: {e}")
+
 
 @app.route('/')
 def index():
