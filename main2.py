@@ -1,13 +1,13 @@
-import os
 import json
 import random
-import boto3
+import os
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from collections import deque
 import datetime
 import threading
+import boto3
 
 # Load environment variables from .env
 load_dotenv('.env')
@@ -33,13 +33,14 @@ s3 = boto3.client(
 BUCKET_NAME = 'datamessage'
 S3_KEY = 'telemetry_data.json'
 
+# Data history queue setup
 data_history = deque(maxlen=1000)
 data_lock = threading.Lock()
 
 # Current simulated data
 current_position = {"latitude": 0, "longitude": 0, "altitude": 0, "temperature": 0}
 
-
+# Function to generate realistic data
 def generate_realistic_data():
     global current_position
     current_position["latitude"] += random.uniform(-0.02, 0.02)
@@ -51,19 +52,23 @@ def generate_realistic_data():
         "time": datetime.datetime.utcnow().isoformat(),
         **current_position
     }
+    
+    # Locking to update data history safely
     with data_lock:
         data_history.append(new_data)
+
+    # Save data to S3
     try:
         s3.put_object(Bucket=BUCKET_NAME, Key=S3_KEY, Body=json.dumps(list(data_history)))
     except Exception as e:
         print(f"Error saving to S3: {e}")
 
-
+# Home page route
 @app.route('/')
 def index():
     return render_template('index2.html')
 
-
+# Route for live data
 @app.route('/live-data')
 def live_data():
     try:
@@ -73,22 +78,25 @@ def live_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# Route for history data
 @app.route('/history')
 def history():
-    with data_lock:
-        return jsonify(list(data_history))
+    try:
+        with data_lock:
+            return jsonify(list(data_history))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-
+# Thread to simulate data generation
 def simulation_thread():
     while True:
         generate_realistic_data()
         threading.Event().wait(5)
 
-
 if __name__ == "__main__":
     threading.Thread(target=simulation_thread, daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
 
 
 
