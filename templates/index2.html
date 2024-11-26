@@ -65,8 +65,13 @@
                 x: {
                     type: 'time', 
                     time: {
-                        unit: 'second', 
-                        tooltipFormat: 'll HH:mm:ss'  // Tooltip format for time
+                        parser: 'yyyy-MM-dd HH:mm:ss', // Format of incoming time data
+                        tooltipFormat: 'PPpp',       // Tooltip format for readability
+                        displayFormats: {
+                            second: 'HH:mm:ss',      // Display seconds on the x-axis
+                            minute: 'HH:mm',         // Format if data spans minutes
+                            hour: 'HH:mm'           // Format if data spans hours
+                        }
                     },
                     title: { display: true, text: 'Time' }
                 },
@@ -124,5 +129,6 @@
 
 </body>
 </html>
+
 
 
