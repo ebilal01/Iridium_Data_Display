@@ -106,14 +106,20 @@ def index():
 
 
 @app.route('/live-data', methods=['GET'])
-def live_data():
-    with data_lock:
-        if not data_history:
-            return jsonify({"message": "No data available"}), 404
-        latest_data = data_history[-1]
-    print("Serving live data:", latest_data)
-    return jsonify(latest_data)
+def get_live_data():
+    # Fetch the most recent telemetry record
+    latest_data = Telemetry.query.order_by(desc(Telemetry.timestamp)).first()
 
+    if latest_data:
+        return jsonify({
+            'latitude': latest_data.latitude,
+            'longitude': latest_data.longitude,
+            'altitude': latest_data.altitude,
+            'temperature': latest_data.temperature,
+            'time': latest_data.timestamp.isoformat()
+        })
+    else:
+        return jsonify({'error': 'No live data available'}), 404
 @app.route('/history', methods=['GET'])
 def history():
     with data_lock:
