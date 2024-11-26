@@ -96,25 +96,26 @@
 
     // Function to update the map and flight path
     function updateMapAndPath() {
-    fetch(`${BASE_URL}/live-data`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Live Data:", data); // Debugging live data
-            const { latitude, longitude, altitude, temperature, time } = data;
+        fetch(`${BASE_URL}/live-data`)
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to fetch live data");
+                return response.json();
+            })
+            .then(data => {
+                console.log("Live Data:", data); // Debugging live data
+                const { latitude, longitude, altitude, temperature, time } = data;
 
-            if (latitude && longitude) {
-                marker.setLatLng([latitude, longitude]);
-                marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
+                if (latitude && longitude) {
+                    marker.setLatLng([latitude, longitude]);
+                    marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
 
-                flightPath.push([latitude, longitude]);
-                pathLine.setLatLngs(flightPath);
-                map.fitBounds(pathLine.getBounds());
-            }
-        })
-        .catch(error => console.error('Error updating map and path:', error));
-}
-
-
+                    flightPath.push([latitude, longitude]);
+                    pathLine.setLatLngs(flightPath);
+                    map.fitBounds(pathLine.getBounds());
+                }
+            })
+            .catch(error => console.error('Error updating map and path:', error));
+    }
 
     // Load initial historical data for path
     function loadInitialPath() {
@@ -141,6 +142,7 @@
 </script>
 </body>
 </html>
+
 
 
 
