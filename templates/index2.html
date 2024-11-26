@@ -80,15 +80,16 @@ function updateGraph() {
         .then(response => response.json())
         .then(history => {
             if (history.length > 0) {
+                // Update the times and altitudes arrays
                 const latestData = history[history.length - 1];
                 const time = latestData.time;
                 const altitude = latestData.altitude;
 
-                // Ensure data arrays are always in sync with the most recent data
+                // Append new data to the arrays
                 times.push(time);
                 altitudes.push(altitude);
 
-                // Update chart data
+                // Update the chart with the new data
                 altitudeChart.data.labels = times;
                 altitudeChart.data.datasets[0].data = altitudes;
                 altitudeChart.update();
@@ -105,13 +106,17 @@ function updateMapAndPath() {
             if (data.latitude && data.longitude) {
                 const { latitude, longitude, altitude, temperature, time } = data;
 
-                // Update marker location
+                // Update marker location on the map
                 marker.setLatLng([latitude, longitude]);
                 marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
 
-                // Add point to flight path
+                // Add the new position to the flight path
                 flightPath.push([latitude, longitude]);
+
+                // Update the polyline path on the map
                 pathLine.setLatLngs(flightPath);
+
+                // Adjust map bounds to fit the updated path
                 map.fitBounds(pathLine.getBounds());
             }
         })
@@ -127,7 +132,10 @@ function loadInitialPath() {
                 flightPath.push([point.latitude, point.longitude]);
             });
 
+            // Set the initial polyline path on the map
             pathLine.setLatLngs(flightPath);
+
+            // Adjust map bounds to fit the initial path
             map.fitBounds(pathLine.getBounds());
         })
         .catch(error => console.error('Error loading initial path:', error));
@@ -140,6 +148,7 @@ updateGraph();
 // Set intervals for updating data
 setInterval(updateGraph, 10000); // Updates the graph every 10 seconds
 setInterval(updateMapAndPath, 10000); // Updates the map and path every 10 seconds
+
 
 </script>
 </body>
