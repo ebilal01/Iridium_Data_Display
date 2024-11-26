@@ -79,17 +79,21 @@
         fetch(`${BASE_URL}/history`)
             .then(response => response.json())
             .then(history => {
-                const latestData = history[history.length - 1];
-                const time = latestData.time;
-                const altitude = latestData.altitude;
+                if (history.length > 0) {
+                    const latestData = history[history.length - 1];
+                    const time = latestData.time;
+                    const altitude = latestData.altitude;
 
-                times.push(time);
-                altitudes.push(altitude);
+                    times.push(time);
+                    altitudes.push(altitude);
 
-                // Update chart data
-                altitudeChart.data.labels = times;
-                altitudeChart.data.datasets[0].data = altitudes;
-                altitudeChart.update();
+                    // Update chart data
+                    altitudeChart.data.labels = times;
+                    altitudeChart.data.datasets[0].data = altitudes;
+                    altitudeChart.update();
+                } else {
+                    console.error('History is empty');
+                }
             })
             .catch(error => console.error('Error updating graph:', error));
     }
@@ -100,15 +104,22 @@
             .then(response => response.json())
             .then(data => {
                 console.log("Live Data:", data); // Debugging live data
-                const { latitude, longitude, altitude, temperature, time } = data;
 
-                if (latitude && longitude) {
+                if (data.latitude && data.longitude && data.time) {
+                    const { latitude, longitude, altitude, temperature, time } = data;
+
                     marker.setLatLng([latitude, longitude]);
                     marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
 
                     flightPath.push([latitude, longitude]);
                     pathLine.setLatLngs(flightPath);
-                    map.fitBounds(pathLine.getBounds());
+
+                    // Only fit bounds if the path has data
+                    if (flightPath.length > 0) {
+                        map.fitBounds(pathLine.getBounds());
+                    }
+                } else {
+                    console.error('Live data is invalid or empty');
                 }
             })
             .catch(error => console.error('Error updating map and path:', error));
@@ -119,12 +130,19 @@
         fetch(`${BASE_URL}/history`)
             .then(response => response.json())
             .then(history => {
-                history.forEach(point => {
-                    flightPath.push([point.latitude, point.longitude]);
-                });
+                if (history.length > 0) {
+                    history.forEach(point => {
+                        flightPath.push([point.latitude, point.longitude]);
+                    });
 
-                pathLine.setLatLngs(flightPath);
-                map.fitBounds(pathLine.getBounds());
+                    pathLine.setLatLngs(flightPath);
+                    // Only fit bounds if the path has data
+                    if (flightPath.length > 0) {
+                        map.fitBounds(pathLine.getBounds());
+                    }
+                } else {
+                    console.error('No history data available for path');
+                }
             })
             .catch(error => console.error('Error loading initial path:', error));
     }
