@@ -105,7 +105,7 @@ def live_data():
         if not data_history:
             return jsonify({"message": "No data available"}), 404
         latest_data = data_history[-1]
-    print("Serving live data:", latest_data)
+    print(f"Serving live data: {latest_data}")  # Add this log
     return jsonify(latest_data)
 
 # Route for historical data
