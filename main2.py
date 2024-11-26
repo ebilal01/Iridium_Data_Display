@@ -1,13 +1,13 @@
 import os
 import json
 import random
+import boto3
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from collections import deque
 import datetime
 import threading
-import boto3
 
 # Load environment variables from .env
 load_dotenv('.env')
@@ -89,6 +89,7 @@ def simulation_thread():
 if __name__ == "__main__":
     threading.Thread(target=simulation_thread, daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
 
 
 
