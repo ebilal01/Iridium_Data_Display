@@ -36,53 +36,55 @@
 <script>
     const BASE_URL = 'https://iridium-data-display.onrender.com'; // Flask backend address
 
-    // Initialize the map
-    const map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+// Initialize the map
+const map = L.map('map').setView([0, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
-    const marker = L.marker([0, 0]).addTo(map);
-    const flightPath = [];
-    const pathLine = L.polyline(flightPath, { color: 'blue' }).addTo(map);
+const marker = L.marker([0, 0]).addTo(map);
+const flightPath = [];
+const pathLine = L.polyline(flightPath, { color: 'blue' }).addTo(map);
 
-    // Data arrays for graph updates
-    const times = [];
-    const altitudes = [];
+// Data arrays for graph updates
+const times = [];
+const altitudes = [];
 
-    // Correct the ID to match the canvas element in the HTML
-    const ctx = document.getElementById('altitudeChart').getContext('2d');
-    const altitudeChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: times,
-            datasets: [{
-                label: 'Altitude (m)',
-                data: altitudes,
-                borderColor: 'rgb(75, 192, 192)',
-                fill: false,
-            }]
+// Correct the ID to match the canvas element in the HTML
+const ctx = document.getElementById('altitudeChart').getContext('2d');
+const altitudeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: times,
+        datasets: [{
+            label: 'Altitude (m)',
+            data: altitudes,
+            borderColor: 'rgb(75, 192, 192)',
+            fill: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: { title: { display: true, text: 'Altitude (m)' } }
         },
-        options: {
-            responsive: true,
-            scales: {
-                x: { title: { display: true, text: 'Time' } },
-                y: { title: { display: true, text: 'Altitude (m)' } }
-            },
-            animation: false
-        }
-    });
+        animation: false
+    }
+});
 
-    // Function to update the graph
-    function updateGraph() {
-        fetch(`${BASE_URL}/history`)
-            .then(response => response.json())
-            .then(history => {
+// Function to update the graph
+function updateGraph() {
+    fetch(`${BASE_URL}/history`)
+        .then(response => response.json())
+        .then(history => {
+            if (history.length > 0) {
                 const latestData = history[history.length - 1];
                 const time = latestData.time;
                 const altitude = latestData.altitude;
 
+                // Ensure data arrays are always in sync with the most recent data
                 times.push(time);
                 altitudes.push(altitude);
 
@@ -90,51 +92,55 @@
                 altitudeChart.data.labels = times;
                 altitudeChart.data.datasets[0].data = altitudes;
                 altitudeChart.update();
-            })
-            .catch(error => console.error('Error updating graph:', error));
-    }
+            }
+        })
+        .catch(error => console.error('Error updating graph:', error));
+}
 
-    // Function to update the map and flight path
-    function updateMapAndPath() {
-        fetch(`${BASE_URL}/live-data`)
-            .then(response => response.json())
-            .then(data => {
+// Function to update the map and flight path
+function updateMapAndPath() {
+    fetch(`${BASE_URL}/live-data`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.latitude && data.longitude) {
                 const { latitude, longitude, altitude, temperature, time } = data;
 
-                if (latitude && longitude) {
-                    marker.setLatLng([latitude, longitude]);
-                    marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
+                // Update marker location
+                marker.setLatLng([latitude, longitude]);
+                marker.bindPopup(`Satellite Location<br>Lat: ${latitude}, Long: ${longitude}<br>Alt: ${altitude}m<br>Temp: ${temperature}°C`).openPopup();
 
-                    flightPath.push([latitude, longitude]);
-                    pathLine.setLatLngs(flightPath);
-                    map.fitBounds(pathLine.getBounds());
-                }
-            })
-            .catch(error => console.error('Error updating map and path:', error));
-    }
-
-    // Load initial historical data for path
-    function loadInitialPath() {
-        fetch(`${BASE_URL}/history`)
-            .then(response => response.json())
-            .then(history => {
-                history.forEach(point => {
-                    flightPath.push([point.latitude, point.longitude]);
-                });
-
+                // Add point to flight path
+                flightPath.push([latitude, longitude]);
                 pathLine.setLatLngs(flightPath);
                 map.fitBounds(pathLine.getBounds());
-            })
-            .catch(error => console.error('Error loading initial path:', error));
-    }
+            }
+        })
+        .catch(error => console.error('Error updating map and path:', error));
+}
 
-    // Initial setup
-    loadInitialPath();
-    updateGraph();
+// Load initial historical data for path
+function loadInitialPath() {
+    fetch(`${BASE_URL}/history`)
+        .then(response => response.json())
+        .then(history => {
+            history.forEach(point => {
+                flightPath.push([point.latitude, point.longitude]);
+            });
 
-    // Set intervals for updating data
-    setInterval(updateGraph, 10000);
-    setInterval(updateMapAndPath, 10000);
+            pathLine.setLatLngs(flightPath);
+            map.fitBounds(pathLine.getBounds());
+        })
+        .catch(error => console.error('Error loading initial path:', error));
+}
+
+// Initial setup
+loadInitialPath();
+updateGraph();
+
+// Set intervals for updating data
+setInterval(updateGraph, 10000); // Updates the graph every 10 seconds
+setInterval(updateMapAndPath, 10000); // Updates the map and path every 10 seconds
+
 </script>
 </body>
 </html>
