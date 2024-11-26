@@ -98,6 +98,7 @@ def generate_realistic_data():
 def index():
     return render_template('index2.html')  # Make sure this points to your HTML file
 
+# Route for live data
 @app.route('/live-data', methods=['GET'])
 def live_data():
     with data_lock:
@@ -107,10 +108,12 @@ def live_data():
     print("Serving live data:", latest_data)
     return jsonify(latest_data)
 
+# Route for historical data
 @app.route('/history', methods=['GET'])
 def history():
     with data_lock:
         return jsonify(list(data_history))  # All historical data
+
 
 # Background thread for generating live data
 def continuous_data_simulation():
